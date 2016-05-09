@@ -1,3 +1,5 @@
+package codeswithmultipledelimeters.logic;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,15 +17,15 @@ public class FastDecoding {
 		byte rest = 0;
 		Integer word = 1;
 		Integer wordLength;
-		for (int i = 0; i < input.length; i++) { // f1 = 0
-			int in = (input[i] + 256) % 256;
+		for (byte byteWord : input) { // f1 = 0
+			int in = (byteWord + 256) % 256;
 			Integer byteFromTable = byteTable[rest][in];
 			if ((byteFromTable & 0x80000000) == 0) {
 				wordLength = byteFromTable & 0xF;
 				byteFromTable >>= 4;
 				word <<= wordLength;
 				word |= byteFromTable & 0x3FF;
-				rest = (byte)((byteFromTable >> 10) & 0x7);
+				rest = (byte) ((byteFromTable >> 10) & 0x7);
 			} else { // f1 = 1
 				wordLength = byteFromTable & 0x7;
 				byteFromTable >>= 3;
@@ -37,7 +39,7 @@ public class FastDecoding {
 					byteFromTable >>= 3;
 					word <<= wordLength;
 					word |= byteFromTable & 0x7F;
-					rest = (byte)((byteFromTable >> 7) & 0x7);
+					rest = (byte) ((byteFromTable >> 7) & 0x7);
 				} else { //f2 = 1
 					wordLength = byteFromTable & 0x7;
 					byteFromTable >>= 3;
@@ -50,10 +52,15 @@ public class FastDecoding {
 					byteFromTable >>= 3;
 					word <<= wordLength;
 					word |= byteFromTable & 0xF;
-					rest = (byte)((byteFromTable >> 4) & 0x7);
-					if ((byteFromTable & 0x400) != 0) { // f3 = 1
+					byteFromTable >>= 4;
+					if ((byteFromTable & 0x40) == 0) { // f3 = 0
+						rest = (byte)((byteFromTable) & 0x7);
+					} else { // f3 = 1
+						wordLength = byteFromTable & 0x1;
+						word <<= wordLength;
 						codeNumbers.add(word);
 						word = 1;
+						rest = (byte)((byteFromTable >> 1) & 0x7);
 					}
 				}
 			}

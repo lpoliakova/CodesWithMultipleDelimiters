@@ -1,3 +1,5 @@
+package codeswithmultipledelimeters.domain;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,16 +35,16 @@ public class ByteTable {
 				i += 2;
 			} else if (code.startsWith("0110", i)) {
 				if (!currentNumber.contains("1")) {
-					if ((numbers.isEmpty() && rest.equals("")) || !(numbers.isEmpty()))
+					if ((numbers.isEmpty() && !rest.contains("0")) || !(numbers.isEmpty()))
 						currentNumber += "0";
-				}
-				else {
+				} else {
 					Integer runningOnes = 0;
 					for (int j = 0; j < currentNumber.length(); j++) {
 						if (currentNumber.charAt(j) == '1') runningOnes++;
 						else if (currentNumber.charAt(j) == '0' && runningOnes < 3) runningOnes = 0;
 						else {
-							currentNumber = currentNumber.substring(0, currentNumber.length() - 1);
+							currentNumber = currentNumber.substring(0, j - 1) + currentNumber.substring(j, currentNumber.length());
+							j--;
 							runningOnes = 0;
 						}
 					}
@@ -65,7 +67,8 @@ public class ByteTable {
 				if (currentNumber.charAt(j) == '1') runningOnes++;
 				else if (currentNumber.charAt(j) == '0' && runningOnes < 3) runningOnes = 0;
 				else {
-					currentNumber = currentNumber.substring(0, currentNumber.length() - 1);
+					currentNumber = currentNumber.substring(0, j - 1) + currentNumber.substring(j, currentNumber.length());
+					j--;
 					runningOnes = 0;
 				}
 			}
@@ -78,7 +81,7 @@ public class ByteTable {
 				numbers.add("11");
 			} else if (runningOnes == 2 && currentNumber.length() > 2) {
 				currentNumber = currentNumber.substring(0, currentNumber.length() - 2);
-				if (!currentNumber.contains("1")) {
+				if (!currentNumber.contains("1") && ((numbers.isEmpty() && !rest.contains("0")) || !(numbers.isEmpty()))) {
 					numbers.add(currentNumber);
 					numbers.add("11");
 				} else {
@@ -91,7 +94,7 @@ public class ByteTable {
 				numbers.add("1");
 			} else if (runningOnes == 1 && currentNumber.length() > 1) {
 				currentNumber = currentNumber.substring(0, currentNumber.length() - 1);
-				if (!currentNumber.contains("1")) {
+				if (!currentNumber.contains("1") && ((numbers.isEmpty() && !rest.contains("0")) || !(numbers.isEmpty()))) {
 					numbers.add(currentNumber);
 					numbers.add("1");
 				} else {
@@ -100,7 +103,7 @@ public class ByteTable {
 					numbers.add("01");
 				}
 			} else {
-				if (!currentNumber.contains("1")) {
+				if (!currentNumber.contains("1") && ((numbers.isEmpty() && !rest.contains("0")) || !(numbers.isEmpty()))) {
 					numbers.add(currentNumber);
 					numbers.add("");
 				} else {
@@ -110,9 +113,7 @@ public class ByteTable {
 			}
 
 		}
-		Integer result = formInteger(numbers);
-		if (currentNumber.length() == 0 && numbers.size() == 5) result |= 0x20000000;
-		return result;
+		return formInteger(numbers);
 	}
 
 	private static Integer formInteger (List<String> numbers) {
@@ -125,12 +126,19 @@ public class ByteTable {
 			result = addWord(result, 7, 3, numbers.get(1));
 			result = addWord(result, 6, 3, numbers.get(0));
 			result |= 0x80000000;
-		} else {
+		} else if (numbers.size() == 4) {
 			result |= getRestInteger(numbers.get(3));
 			result = addWord(result, 4, 3, numbers.get(2));
 			result = addWord(result, 4, 3, numbers.get(1));
 			result = addWord(result, 6, 3, numbers.get(0));
 			result |= 0xC0000000;
+		} else {
+			result |= getRestInteger(numbers.get(4));
+			result = addWord(result, 0, numbers.get(3).equals("") ? 0 : 1, "");
+			result = addWord(result, 4, 3, numbers.get(2));
+			result = addWord(result, 4, 3, numbers.get(1));
+			result = addWord(result, 6, 3, numbers.get(0));
+			result |= 0xE0000000;
 		}
 		return result;
 	}
